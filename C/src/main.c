@@ -117,20 +117,24 @@ N_32 read_token (Buffer* token, Input* input)
     if(end_of_input(input))
         goto error;
 
-    character = read_UTF_8_character(input);
+    character = input_UTF_8_data(input);//read_UTF_8_character(input);
 
     if(!is_latin_character(character) && !is_cyrillic_character(character) && character != '_')
         goto error;
+
+    read_UTF_8_character(input);
 
     //printf("%d ", character);
     write_UTF_8_character_in_buffer(token, character);
 
     for(;;)
     {
-        character = read_UTF_8_character(input);
+        character = input_UTF_8_data(input);
 
         if(!is_latin_character(character) && !is_cyrillic_character(character) && !is_number_character(character) && character != '_')
             break;
+
+        character = read_UTF_8_character(input);
 
         //printf("%d ", character);
         write_UTF_8_character_in_buffer(token, character);
@@ -268,9 +272,9 @@ void add_in_operand (Parser* parser, N_32 operand_offset, Operand_Node_Type type
 }
 
 
-void add_operand_variable(Parser* parser, N_32 operand_offset, Buffer* variable_name)
+void add_operand_variable (Parser* parser, N_32 operand_offset, Buffer* variable_name)
 {
-
+    printf("add variable, ");
 }
 
 
@@ -281,30 +285,41 @@ N_8 parse_left_operand (Parser* parser, N_32 operand_offset)
     operand = get_operand(parser, operand_offset);
 
     if(!parser->token.length)
-        printf("not operand ");
+    {
+        printf("not operand\n");
+        goto error;
+    }
 
+    add_operand_variable(parser, operand_offset, &parser->token);
     skip_spaces(parser->input);
 
-    switch(input_data(parser->input))
+    switch(input_UTF_8_data(parser->input))
     {
     case '[':
-        read_input(parser->input);
-        printf("array index ");
+        read_UTF_8_character(parser->input);
+        printf("array index, ");
         break;
 
     case '(':
-        read_input(parser->input);
-        printf("function call ");
+        read_UTF_8_character(parser->input);
+        printf("function call, ");
         break;
 
     case '.':
-        read_input(parser->input);
-        printf("system function call ");
+        read_UTF_8_character(parser->input);
+        printf("system function call, ");
         break;
 
     default:
 
     }
+
+    printf("\n");
+
+    return 1;
+
+error:
+    return 0;
 }
 
 
@@ -337,16 +352,21 @@ N_8 parse (Input* input)
     initialize_buffer(&parser.token, 20);
     initialize_buffer(&parser.operands, 20);
 
-    read_token(&parser.token, input);
+    while(!end_of_input(input))
+    {
+        read_token(&parser.token, input);
 
-    if(!compare_token(&parser.token, "если"))
-    {
-        printf("if\n");
-    }
-    else
-    {
-        N_32 operand_offset = allocate_operand(&parser);
-        parse_left_operand(&parser, operand_offset);
+        if(!compare_token(&parser.token, "если"))
+        {
+            printf("if\n");
+        }
+        else
+        {
+            N_32 operand_offset = allocate_operand(&parser);
+            parse_left_operand(&parser, operand_offset);
+        }
+
+        skip_spaces(input);
     }
 
     return 1;
