@@ -15,21 +15,25 @@
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
+				<Linker>
+					<Add library="expression-parser" />
+					<Add library="input" />
+					<Add library="data-structures_buffer" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/script" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="tcc" />
-				<Compiler>
-				</Compiler>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Linker>
-		</Linker>
+		<Unit filename="../src/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Extensions>
 			<code_completion />
 			<envvars />
