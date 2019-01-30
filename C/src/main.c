@@ -229,6 +229,85 @@ typedef struct
 Parser;
 
 
+N_8 parse_expression_operand(Parser* parser)
+{
+    N_8 operand_type;
+
+    read_token(&parser->token, parser->input);
+    skip_spaces(parser->input);
+    operand_type = input_data(parser->input);
+    read_input(parser->input);
+printf("{%c}", operand_type);
+    switch(operand_type)
+    {
+    case '[':
+        if(!parser->token.length)
+        {
+            printf("allocate array expression, ");
+        }
+        else
+        {
+            printf("array index expression, ");
+        }
+
+        read_input(parser->input);
+
+        break;
+
+    case '(':
+        if(!parser->token.length)
+        {
+            printf("allocate function expression, ");
+        }
+        else
+        {
+            printf("function call expression, ");
+        }
+
+        read_input(parser->input);
+        break;
+
+    case '"':
+        printf("allocate string expression, ");
+        read_input(parser->input);
+        break;
+
+    default:
+        if(is_number_character(input_data(parser->input)))
+        {
+            printf("%d, ", read_N_32(parser->input));
+        }
+
+        read_input(parser->input);
+    }
+
+    skip_spaces(parser->input);
+
+    return 1;
+}
+
+
+Operation operations[] = {
+    {BINARY_OPERATION, "*", 1},
+    {BINARY_OPERATION, "+", 2},
+    {UNARY_OPERATION, "-", 0}
+};
+
+
+N_8 read_expression (Parser* parser)
+{
+    Buffer expression;
+
+    return parse_expression (
+        &expression,
+        parser->input,
+        operations,
+        sizeof(operations) / sizeof(Operation),
+        parser,
+        &parse_expression_operand);
+}
+
+
 N_32 allocate_operand(Parser* parser)
 {
     N_32 new_operand_offset;
@@ -282,7 +361,7 @@ N_8 parse_left_operand (Parser* parser, N_32 operand_offset)
 {
     Buffer* operand;
 
-    operand = get_operand(parser, operand_offset);
+    //operand = get_operand(parser, operand_offset);
 
     if(!parser->token.length)
     {
@@ -293,54 +372,53 @@ N_8 parse_left_operand (Parser* parser, N_32 operand_offset)
     add_operand_variable(parser, operand_offset, &parser->token);
     skip_spaces(parser->input);
 
+read_operand:
+
     switch(input_UTF_8_data(parser->input))
     {
     case '[':
         read_UTF_8_character(parser->input);
+        skip_spaces(parser->input);
         printf("array index, ");
+
+        read_expression(parser);
+
+        if(input_UTF_8_data(parser->input) != ']')
+        {
+            printf("error: expected ]\n");
+            goto error;
+        }
+
+        read_UTF_8_character(parser->input);
+        skip_spaces(parser->input);
+
+        goto read_operand;
         break;
 
     case '(':
         read_UTF_8_character(parser->input);
+        skip_spaces(parser->input);
         printf("function call, ");
+
+        goto read_operand;
         break;
 
     case '.':
         read_UTF_8_character(parser->input);
+        skip_spaces(parser->input);
         printf("system function call, ");
+
+        goto read_operand;
         break;
 
     default:
-
+        printf("end of operand\n");
     }
-
-    printf("\n");
 
     return 1;
 
 error:
     return 0;
-}
-
-
-N_8 parse_expression_operand(Parser* parser)
-{
-    N_8 operand_type;
-
-    read_token(&parser->token, parser->input);
-    skip_spaces(parser->input);
-    operand_type = input_data(parser->input);
-    read_input(parser->input);
-
-    switch(operand_type)
-    {
-    case '[':
-        break;
-    case '(':
-        break;
-    case '"':
-        break;
-    }
 }
 
 
@@ -363,10 +441,23 @@ N_8 parse (Input* input)
         else
         {
             N_32 operand_offset = allocate_operand(&parser);
-            parse_left_operand(&parser, operand_offset);
+            if(!parse_left_operand(&parser, operand_offset))
+            {
+                printf("error parse operand\n");
+                goto error;
+            }
+
+            if(input_UTF_8_data(input) == '=')
+            {
+                printf("ASSIGNMENT ");
+
+                read_UTF_8_character(input);
+                skip_spaces(input);
+                //parse_expression
+            }
         }
 
-        skip_spaces(input);
+        //skip_spaces(input);
     }
 
     return 1;
