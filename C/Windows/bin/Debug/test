@@ -1,2 +1,5 @@
-ert [ 123 ] 
-a = abs(
+a = t[0]
+
+f(d, 2, 3, 4)
+
+msvcrt.malloc(a b)

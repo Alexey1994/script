@@ -1,83 +1,6 @@
 #include <system.h>
 #include <expression-parser.h>
 
-/*
-void print_expression_in_postfix_notation (Buffer* expression, void (*print_operand)(Byte* operand))
-{
-    Expression_Node* nodes;
-    N_32             length;
-
-    nodes = expression->data;
-    length = expression->length / sizeof(Expression_Node);
-
-    cycle(0, length, 1)
-        Expression_Node* current_node = nodes + i;
-
-        if(current_node->type == OPERAND)
-            printf("UTF+%d ", current_node->data);
-
-        if(current_node->type == BINARY_OPERATION)
-            printf("%s ", ((Operation*)current_node->data)->name);
-    end
-}
-
-
-N_32 read_operand (Input *input)
-{
-    N_32 number = read_UTF_8_character(input);
-    skip_spaces(input);
-    return number;
-
-error:
-    return 0;
-}
-
-
-Operation operations[] = {
-    {BINARY_OPERATION, "*", 1},
-    {BINARY_OPERATION, "+", 2},
-    {UNARY_OPERATION, "-", 0}
-};
-
-
-int fgetc( Byte * filestream );
-int feof ( Byte * filestream );
-
-
-void print_operand (char operand)
-{
-    printf("%c", operand);
-}
-
-
-N_32 main ()
-{
-    Input   input;
-    Byte*   input_file;
-    Buffer  expression;
-    N_32    is_success;
-
-    input_file = fopen("test", "rb");
-    initialize_input(&input, input_file, &fgetc);
-    input.end_of_data = &feof;
-
-    is_success = parse_expression (
-        &expression,
-        &input,
-        operations,
-        sizeof(operations) / sizeof(Operation),
-        &input,
-        &read_operand);
-
-    if(!is_success)
-        printf("error parsing\n");
-
-    print_expression_in_postfix_notation(&expression, &print_operand);
-
-    return 0;
-}
-*/
-
 
 int fgetc( Byte * filestream );
 int feof ( Byte * filestream );
@@ -229,11 +152,22 @@ typedef struct
 Parser;
 
 
+N_8 read_expression (Parser* parser);
+
+
 N_8 parse_expression_operand(Parser* parser)
 {
     N_8 operand_type;
 
+    if(is_number_character(input_data(parser->input)))
+    {
+        printf("%d, ", read_N_32(parser->input));
+        return 1;
+    }
+
     read_token(&parser->token, parser->input);
+
+read_next_operand_node:
     skip_spaces(parser->input);
     operand_type = input_data(parser->input);
 
@@ -242,14 +176,26 @@ N_8 parse_expression_operand(Parser* parser)
     case '[':
         if(!parser->token.length)
         {
+            read_input(parser->input);
             printf("allocate array expression, ");
+            goto read_next_operand_node;
         }
         else
         {
             printf("array index expression, ");
-        }
 
-        read_input(parser->input);
+            read_input(parser->input);
+            read_expression(parser);
+
+            if(input_UTF_8_data(parser->input) != ']')
+            {
+                printf("error: expected ]\n");
+                goto error;
+            }
+
+            read_UTF_8_character(parser->input);
+            goto read_next_operand_node;
+        }
 
         break;
 
@@ -262,6 +208,9 @@ N_8 parse_expression_operand(Parser* parser)
         {
             printf("error: expected function name");
         }
+
+        read_input(parser->input);
+        goto read_next_operand_node;
         break;
 
     case '(':
@@ -275,23 +224,22 @@ N_8 parse_expression_operand(Parser* parser)
         }
 
         read_input(parser->input);
+        goto read_next_operand_node;
         break;
 
     case '"':
         printf("allocate string expression, ");
         read_input(parser->input);
+        goto read_next_operand_node;
         break;
-
-    default:
-        if(is_number_character(input_data(parser->input)))
-        {
-            printf("%d, ", read_N_32(parser->input));
-        }
     }
 
     skip_spaces(parser->input);
 
     return 1;
+
+error:
+    return 0;
 }
 
 
@@ -408,6 +356,22 @@ read_operand:
         skip_spaces(parser->input);
         printf("function call, ");
 
+        while(!end_of_input(parser->input))
+        {
+            if(input_UTF_8_data(parser->input) == ')')
+                break;
+
+            read_expression(parser);
+
+            if(input_UTF_8_data(parser->input) == ',')
+                read_UTF_8_character(parser->input);
+
+            skip_spaces(parser->input);
+        }
+
+        read_UTF_8_character(parser->input);
+        skip_spaces(parser->input);
+
         goto read_operand;
         break;
 
@@ -416,11 +380,36 @@ read_operand:
         skip_spaces(parser->input);
         printf("system function call, ");
 
+        read_token(&parser->token, parser->input);
+        skip_spaces(parser->input);
+
+        if(input_UTF_8_data(parser->input) != '(')
+            printf("error: expected (\n");
+
+        read_UTF_8_character(parser->input);
+        skip_spaces(parser->input);
+
+        while(!end_of_input(parser->input))
+        {
+            if(input_UTF_8_data(parser->input) == ')')
+                break;
+
+            read_expression(parser);
+
+            if(input_UTF_8_data(parser->input) == ',')
+                read_UTF_8_character(parser->input);
+
+            skip_spaces(parser->input);
+        }
+
+        read_UTF_8_character(parser->input);
+        skip_spaces(parser->input);
+
         goto read_operand;
         break;
 
     default:
-        printf("end of operand\n");
+        printf("end of operand ");
     }
 
     return 1;
@@ -461,7 +450,12 @@ N_8 parse (Input* input)
 
                 read_UTF_8_character(input);
                 skip_spaces(input);
-                //parse_expression
+                read_expression(&parser);
+                printf("\n");
+            }
+            else
+            {
+                printf("\n");
             }
         }
 
