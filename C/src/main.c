@@ -236,8 +236,7 @@ N_8 parse_expression_operand(Parser* parser)
     read_token(&parser->token, parser->input);
     skip_spaces(parser->input);
     operand_type = input_data(parser->input);
-    read_input(parser->input);
-printf("{%c}", operand_type);
+
     switch(operand_type)
     {
     case '[':
@@ -254,10 +253,21 @@ printf("{%c}", operand_type);
 
         break;
 
+    case '{':
+        if(!parser->token.length)
+        {
+            printf("function declaration, ");
+        }
+        else
+        {
+            printf("error: expected function name");
+        }
+        break;
+
     case '(':
         if(!parser->token.length)
         {
-            printf("allocate function expression, ");
+            printf("error: expected function name");
         }
         else
         {
@@ -277,8 +287,6 @@ printf("{%c}", operand_type);
         {
             printf("%d, ", read_N_32(parser->input));
         }
-
-        read_input(parser->input);
     }
 
     skip_spaces(parser->input);

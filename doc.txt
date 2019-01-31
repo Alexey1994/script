@@ -1,9 +1,8 @@
 #типы: число, строка, массив, функция
 
-f = (a, b) {
+f = {a, b |
     c = a + b
     d = a[0] + b
-
     return d
 }
 
@@ -15,9 +14,7 @@ a = [
 
 f(a, 0)
 
-f(a, (a, b) {
-    return a + b
-})
+f(a, {a, b | return a + b})
 
 ##################################
 
@@ -38,15 +35,9 @@ else {
 
 ##################################
 
-Buffer = () {
-    return [
-        0,
-        1,
-        msvcrt.malloc(4)
-    ]
-}
+Buffer = { | return [0, 1, msvcrt.malloc(4)]}
 
-write_in_buffer = (buffer, data) {
+write_in_buffer = {buffer, data |
     if buffer[0] >= buffer[1] {
         buffer[1] = buffer[1] * 2
         buffer[2] = msvcrt.realloc(buffer[2], buffer[1] * 4)
