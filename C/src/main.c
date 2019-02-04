@@ -153,20 +153,51 @@ Parser;
 
 
 N_8 read_expression (Parser* parser);
+N_8 parse_left_operand (Parser* parser, N_32 operand_offset);
 
 
 N_8 parse_expression_operand(Parser* parser)
 {
     N_8 operand_type;
 
-    if(is_number_character(input_data(parser->input)))
-    {
-        printf("%d, ", read_N_32(parser->input));
-        return 1;
-    }
-
     read_token(&parser->token, parser->input);
+    skip_spaces(parser->input);
 
+    if(!parser->token.length)
+    {
+        operand_type = input_data(parser->input);
+
+        if(is_number_character(operand_type))
+        {
+            printf("%d, ", read_N_32(parser->input));
+            return 1;
+        }
+
+        switch(operand_type)
+        {
+        case '[':
+            read_input(parser->input);
+            printf("allocate array expression, ");
+            break;
+
+        case '{':
+            read_input(parser->input);
+            printf("function declaration, ");
+            break;
+
+        case '"':
+            read_input(parser->input);
+            printf("const string, ");
+            break;
+        }
+
+        skip_spaces(parser->input);
+    }
+    else
+    {
+        parse_left_operand(parser, -1);
+    }
+/*
 read_next_operand_node:
     skip_spaces(parser->input);
     operand_type = input_data(parser->input);
@@ -206,7 +237,7 @@ read_next_operand_node:
         }
         else
         {
-            printf("error: expected function name");
+            printf("empty function");
         }
 
         read_input(parser->input);
@@ -235,7 +266,7 @@ read_next_operand_node:
     }
 
     skip_spaces(parser->input);
-
+*/
     return 1;
 
 error:
