@@ -163,7 +163,11 @@ N_8 parse_expression_operand(Parser* parser)
     read_token(&parser->token, parser->input);
     skip_spaces(parser->input);
 
-    if(!parser->token.length)
+    if(parser->token.length)
+    {
+        parse_left_operand(parser, -1);
+    }
+    else
     {
         operand_type = input_data(parser->input);
 
@@ -193,80 +197,7 @@ N_8 parse_expression_operand(Parser* parser)
 
         skip_spaces(parser->input);
     }
-    else
-    {
-        parse_left_operand(parser, -1);
-    }
-/*
-read_next_operand_node:
-    skip_spaces(parser->input);
-    operand_type = input_data(parser->input);
 
-    switch(operand_type)
-    {
-    case '[':
-        if(!parser->token.length)
-        {
-            read_input(parser->input);
-            printf("allocate array expression, ");
-            goto read_next_operand_node;
-        }
-        else
-        {
-            printf("array index expression, ");
-
-            read_input(parser->input);
-            read_expression(parser);
-
-            if(input_UTF_8_data(parser->input) != ']')
-            {
-                printf("error: expected ]\n");
-                goto error;
-            }
-
-            read_UTF_8_character(parser->input);
-            goto read_next_operand_node;
-        }
-
-        break;
-
-    case '{':
-        if(!parser->token.length)
-        {
-            printf("function declaration, ");
-        }
-        else
-        {
-            printf("empty function");
-        }
-
-        read_input(parser->input);
-        goto read_next_operand_node;
-        break;
-
-    case '(':
-        if(!parser->token.length)
-        {
-            printf("error: expected function name");
-        }
-        else
-        {
-            printf("function call expression, ");
-        }
-
-        read_input(parser->input);
-        goto read_next_operand_node;
-        break;
-
-    case '"':
-        printf("allocate string expression, ");
-        read_input(parser->input);
-        goto read_next_operand_node;
-        break;
-    }
-
-    skip_spaces(parser->input);
-*/
     return 1;
 
 error:

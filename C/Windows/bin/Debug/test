@@ -4,4 +4,5 @@ f(d, 2, 3, 4)
 
 msvcrt.malloc(a b)
 
-t = [
+t = [ + {
+f({)
